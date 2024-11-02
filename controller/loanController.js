@@ -1,8 +1,8 @@
 import { Loan } from "../model/Loan.js";
 export const loanController = async (req, res) => {
   try {
-    const { amount, term } = req.body;
-    console.log(amount, term);
+    const { amount, term,type,rate } = req.body;
+    console.log(type,rate);
     if (!amount || !term) {
       return res.status(400).send({
         success: false,
@@ -13,18 +13,24 @@ export const loanController = async (req, res) => {
       userId: req.user._id,
       amount,
       term,
+      type,
+      rate,
       status: "pending",
     });
 
     const startDate = new Date();
-    for (let i = 0; i < term; i++) {
+    const newTerm=12*term;
+    for (let i = 0; i < newTerm; i++) {
       const date = new Date(startDate);
-      date.setDate(date.getDate() + 7 * (i + 1));
-      const repaymentAmount = amount / term;
+      // date.setFullYear(date.getFullYear() + (i + 1));  
+      date.setMonth(date.getMonth() + (i + 1));
+      const repaymentAmount = amount / newTerm;
       newLoan.repayments.push({ amount: repaymentAmount, date });
     }
+    
 
     await newLoan.save();
+    console.log(newLoan)
     res.status(201).send({
       success: true,
       message: "request send to admin",
@@ -102,7 +108,7 @@ export const repaymentController = async (req, res) => {
 export const loanStackController = async (req, res) => {
   try {
     const loans = await Loan.find({ userId: req.user?._id }).populate("userId");
-    console.log(loans);
+    
     if (loans.length === 0) {
       return res.status(404).send({
         success: false,
